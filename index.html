@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f1419" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Expenses" />
+  <title>Expense Tracker</title>
+  <link rel="manifest" href='data:application/manifest+json,{"name":"Expense Tracker","short_name":"Expenses","start_url":".","display":"standalone","background_color":"%230f1419","theme_color":"%230f1419","icons":[{"src":"data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect fill=%22%232d6a4f%22 width=%22100%22 height=%22100%22 rx=%2220%22/%3E%3Ctext x=%2250%22 y=%2268%22 font-size=%2255%22 text-anchor=%22middle%22%3E%24%3C/text%3E%3C/svg%3E","sizes":"any","type":"image/svg+xml"}]}' />
+  <style>
+    :root {
+      --bg: #0f1419;
+      --bg-elevated: #1a222d;
+      --bg-card: #1e2836;
+      --bg-input: #151c26;
+      --border: #2a3544;
+      --text: #e8eef4;
+      --text-muted: #8b9aab;
+      --accent: #3d9a6a;
+      --accent-dim: #2d6a4f;
+      --warn: #d4a017;
+      --danger: #c45c5c;
+      --temp: #5b8def;
+      --recurring: #3d9a6a;
+      --radius: 14px;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100%;
+      -webkit-text-size-adjust: 100%;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      padding: calc(12px + var(--safe-top)) 14px calc(28px + var(--safe-bottom));
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-bottom: 14px;
+    }
+
+    /* Sticky dashboard */
+    .dashboard {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: linear-gradient(180deg, var(--bg) 70%, transparent);
+      padding-bottom: 12px;
+      margin: 0 -14px;
+      padding-left: 14px;
+      padding-right: 14px;
+    }
+
+    .totals {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    .total-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 8px;
+      text-align: center;
+    }
+
+    .total-card .label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .total-card .amount {
+      font-size: 1.15rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.03em;
+      color: var(--accent);
+      word-break: break-all;
+    }
+
+    details.how-calc {
+      margin-top: 10px;
+      background: var(--bg-elevated);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    details.how-calc summary {
+      padding: 10px 12px;
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 44px;
+      user-select: none;
+    }
+
+    details.how-calc summary::-webkit-details-marker { display: none; }
+    details.how-calc summary::before {
+      content: "▸";
+      font-size: 0.7rem;
+      transition: transform 0.15s;
+    }
+    details.how-calc[open] summary::before { transform: rotate(90deg); }
+
+    details.how-calc .how-body {
+      padding: 0 12px 12px;
+      line-height: 1.45;
+    }
+
+    .home-tip {
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: var(--bg-elevated);
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 16px 0 12px;
+    }
+
+    .btn {
+      appearance: none;
+      border: none;
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      min-height: 44px;
+      padding: 10px 16px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: opacity 0.15s, background 0.15s;
+    }
+
+    .btn:active { opacity: 0.85; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      flex: 1;
+    }
+
+    .btn-secondary {
+      background: var(--bg-card);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      min-height: 40px;
+      padding: 8px 12px;
+      font-size: 0.8rem;
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    .btn-warn {
+      background: var(--warn);
+      color: #1a1a1a;
+    }
+
+    .btn-block { width: 100%; }
+    .btn-sm { min-height: 40px; padding: 8px 12px; font-size: 0.82rem; }
+
+    /* Filters */
+    .filters {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      margin-bottom: 12px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .chip {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      color: var(--text-muted);
+      border-radius: 999px;
+      padding: 8px 16px;
+      min-height: 40px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .chip.active {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    /* Bill list */
+    .bill-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .bill-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+    }
+
+    .bill-card.paused {
+      opacity: 0.55;
+    }
+
+    .bill-card.complete {
+      opacity: 0.5;
+      border-style: dashed;
+    }
+
+    .bill-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .bill-name {
+      font-weight: 700;
+      font-size: 1.05rem;
+      line-height: 1.25;
+    }
+
+    .bill-amount {
+      font-weight: 700;
+      font-size: 1.15rem;
+      font-variant-numeric: tabular-nums;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .bill-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    .badge-recurring { background: rgba(61, 154, 106, 0.2); color: var(--recurring); }
+    .badge-temporary { background: rgba(91, 141, 239, 0.2); color: var(--temp); }
+    .badge-paused { background: rgba(139, 154, 171, 0.2); color: var(--text-muted); }
+    .badge-complete { background: rgba(212, 160, 23, 0.2); color: var(--warn); }
+    .badge-cat { background: rgba(255,255,255,0.06); color: var(--text-muted); }
+
+    .bill-detail {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+      margin-bottom: 10px;
+    }
+
+    .bill-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    /* Empty state */
+    .empty {
+      text-align: center;
+      padding: 28px 16px;
+      background: var(--bg-elevated);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+    }
+
+    .empty h2 {
+      font-size: 1.1rem;
+      margin-bottom: 8px;
+    }
+
+    .empty p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      z-index: 100;
+      padding: 16px;
+      padding-top: max(16px, var(--safe-top));
+      padding-bottom: max(16px, var(--safe-bottom));
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .modal-overlay.open { display: flex; align-items: flex-start; justify-content: center; }
+
+    .modal {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      width: 100%;
+      max-width: 440px;
+      margin: auto;
+      padding: 20px 16px;
+    }
+
+    .modal h2 {
+      font-size: 1.15rem;
+      margin-bottom: 16px;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      min-height: 44px;
+      padding: 10px 12px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 1rem;
+    }
+
+    .form-group textarea {
+      min-height: 72px;
+      resize: vertical;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .form-actions .btn { flex: 1; }
+
+    .type-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .type-tab {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--bg-input);
+      color: var(--text-muted);
+      border-radius: 10px;
+      min-height: 44px;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .type-tab.active-recurring {
+      background: rgba(61, 154, 106, 0.25);
+      border-color: var(--recurring);
+      color: var(--recurring);
+    }
+
+    .type-tab.active-temporary {
+      background: rgba(91, 141, 239, 0.25);
+      border-color: var(--temp);
+      color: var(--temp);
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 44px;
+      padding: 4px 0;
+    }
+
+    .toggle-row span { font-size: 0.9rem; }
+
+    .switch {
+      position: relative;
+      width: 48px;
+      height: 28px;
+      flex-shrink: 0;
+    }
+
+    .switch input { opacity: 0; width: 0; height: 0; }
+
+    .switch .slider {
+      position: absolute;
+      inset: 0;
+      background: var(--border);
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .switch .slider::before {
+      content: "";
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      left: 3px;
+      top: 3px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+
+    .switch input:checked + .slider { background: var(--accent); }
+    .switch input:checked + .slider::before { transform: translateX(20px); }
+
+    .data-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: calc(24px + var(--safe-bottom));
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--bg-card);
+      border: 1px solid var(--accent);
+      color: var(--text);
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      z-index: 200;
+      opacity: 0;
+      transition: transform 0.25s, opacity 0.25s;
+      pointer-events: none;
+      max-width: 90%;
+      text-align: center;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .hidden { display: none !important; }
+
+    #importFile { display: none; }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <h1>Expenses</h1>
+    <p class="subtitle">Personal bills · stored on this phone</p>
+    <div class="totals">
+      <div class="total-card">
+        <div class="label">Biweekly</div>
+        <div class="amount" id="totalBiweekly">$0</div>
+      </div>
+      <div class="total-card">
+        <div class="label">Monthly</div>
+        <div class="amount" id="totalMonthly">$0</div>
+      </div>
+      <div class="total-card">
+        <div class="label">Yearly</div>
+        <div class="amount" id="totalYearly">$0</div>
+      </div>
+    </div>
+    <details class="how-calc">
+      <summary>How calculated</summary>
+      <div class="how-body">
+        Each active bill is normalized to a monthly amount
+        (weekly × 52/12, biweekly × 26/12, monthly × 1, yearly ÷ 12).
+        Temporary / installment bills count while today is on or before their
+        <strong>end date</strong> (final payment). After the end date they are
+        paid off and drop out of totals. Remaining-payments is an optional helper only.
+        <br /><br />
+        Biweekly total = monthly × 12 ÷ 26 &nbsp;·&nbsp; Yearly = monthly × 12.
+      </div>
+    </details>
+    <p class="home-tip">On iPhone: open in Safari → Share → Add to Home Screen. On Android: Chrome menu → Install app / Add to Home screen.</p>
+  </div>
+
+  <div class="toolbar">
+    <button type="button" class="btn btn-primary" id="btnAdd">+ Add bill</button>
+  </div>
+
+  <div class="filters" role="tablist">
+    <button type="button" class="chip active" data-filter="all">All</button>
+    <button type="button" class="chip" data-filter="recurring">Recurring</button>
+    <button type="button" class="chip" data-filter="temporary">Temporary</button>
+  </div>
+
+  <div class="bill-list" id="billList"></div>
+
+  <div class="data-bar">
+    <button type="button" class="btn btn-ghost" id="btnExport">Export JSON</button>
+    <button type="button" class="btn btn-ghost" id="btnImport">Import JSON</button>
+    <input type="file" id="importFile" accept="application/json,.json" />
+  </div>
+
+  <!-- Add / Edit modal -->
+  <div class="modal-overlay" id="formModal" role="dialog" aria-modal="true">
+    <div class="modal">
+      <h2 id="formTitle">Add bill</h2>
+      <div class="type-tabs" id="typeTabs">
+        <button type="button" class="type-tab active-recurring" data-type="recurring">Recurring</button>
+        <button type="button" class="type-tab" data-type="temporary">Temporary</button>
+      </div>
+
+      <form id="billForm" autocomplete="off">
+        <input type="hidden" id="editId" />
+
+        <div class="form-group">
+          <label for="fName">Name</label>
+          <input type="text" id="fName" required maxlength="80" placeholder="e.g. Car payment" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="fAmount" id="fAmountLabel">Amount</label>
+            <input type="number" id="fAmount" required min="0.01" step="0.01" placeholder="0.00" inputmode="decimal" />
+          </div>
+          <div class="form-group">
+            <label for="fCadence">Cadence</label>
+            <select id="fCadence"></select>
+          </div>
+        </div>
+
+        <!-- Recurring fields -->
+        <div id="recurringFields">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="fCategory">Category</label>
+              <select id="fCategory">
+                <option>Transport</option>
+                <option>Housing</option>
+                <option>Utilities</option>
+                <option>Debt</option>
+                <option>Subscriptions</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="fNextDue">Next due (optional)</label>
+              <input type="date" id="fNextDue" />
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="toggle-row">
+              <span>Active</span>
+              <label class="switch">
+                <input type="checkbox" id="fActive" checked />
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="fNotes">Notes (optional)</label>
+            <textarea id="fNotes" maxlength="300" placeholder="Optional notes"></textarea>
+          </div>
+        </div>
+
+        <!-- Temporary fields -->
+        <div id="temporaryFields" class="hidden">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="fStartDate">Start date</label>
+              <input type="date" id="fStartDate" required />
+            </div>
+            <div class="form-group">
+              <label for="fEndDate">End date (final payment)</label>
+              <input type="date" id="fEndDate" required />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="fRemaining">Remaining payments (optional)</label>
+              <input type="number" id="fRemaining" min="0" step="1" placeholder="Helper only" inputmode="numeric" />
+            </div>
+            <div class="form-group">
+              <label for="fLender">Lender</label>
+              <select id="fLender">
+                <option>Affirm</option>
+                <option>Zip</option>
+                <option>Klarna</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+          <p style="font-size:0.75rem;color:var(--text-muted);margin:-6px 0 12px;line-height:1.35;">
+            End date is the source of truth — once today is past it, the bill is paid off and stops counting.
+          </p>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" id="btnCancelForm">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btnSaveForm">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Confirm delete modal -->
+  <div class="modal-overlay" id="confirmModal" role="dialog" aria-modal="true">
+    <div class="modal">
+      <h2>Delete bill?</h2>
+      <p style="color:var(--text-muted);margin-bottom:16px;font-size:0.95rem;" id="confirmText">This cannot be undone.</p>
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" id="btnCancelDelete">Cancel</button>
+        <button type="button" class="btn btn-danger" id="btnConfirmDelete">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+(function () {
+  "use strict";
+
+  var STORAGE_KEY = "diego-expense-tracker-v1";
+  var CATEGORIES = ["Transport", "Housing", "Utilities", "Debt", "Subscriptions", "Other"];
+  var LENDERS = ["Affirm", "Zip", "Klarna", "Other"];
+  var RECURRING_CADENCES = ["weekly", "biweekly", "monthly", "yearly"];
+  var TEMP_CADENCES = ["biweekly", "monthly"];
+
+  var state = {
+    bills: [],
+    filter: "all",
+    formType: "recurring",
+    editingId: null,
+    deleteId: null,
+    seeded: false
+  };
+
+  // ─── Math ───────────────────────────────────────────────
+
+  /** Today's date as YYYY-MM-DD in local time. */
+  function todayISO() {
+    var d = new Date();
+    var m = String(d.getMonth() + 1).padStart(2, "0");
+    var day = String(d.getDate()).padStart(2, "0");
+    return d.getFullYear() + "-" + m + "-" + day;
+  }
+
+  /** Parse YYYY-MM-DD to local midnight Date (or null). */
+  function parseISODate(s) {
+    if (!s || typeof s !== "string") return null;
+    var p = s.split("-");
+    if (p.length !== 3) return null;
+    var dt = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+    return isNaN(dt.getTime()) ? null : dt;
+  }
+
+  /** Temporary bill is complete when today is after endDate. End date is source of truth. */
+  function isTempComplete(bill) {
+    if (!bill || bill.type !== "temporary") return false;
+    if (!bill.endDate) return false;
+    return todayISO() > bill.endDate;
+  }
+
+  /** Days remaining until end date (0 if today is end day, negative if past). */
+  function daysUntilEnd(bill) {
+    var end = parseISODate(bill.endDate);
+    if (!end) return null;
+    var now = parseISODate(todayISO());
+    var ms = end.getTime() - now.getTime();
+    return Math.round(ms / 86400000);
+  }
+
+  /** Normalize a bill's payment to a monthly amount. Returns 0 if inactive/complete. */
+  function toMonthly(bill) {
+    if (bill.type === "recurring") {
+      if (!bill.active) return 0;
+      var a = Number(bill.amount) || 0;
+      switch (bill.cadence) {
+        case "weekly": return a * 52 / 12;
+        case "biweekly": return a * 26 / 12;
+        case "monthly": return a;
+        case "yearly": return a / 12;
+        default: return 0;
+      }
+    }
+    if (bill.type === "temporary") {
+      // End date is source of truth — count while today <= endDate
+      if (isTempComplete(bill)) return 0;
+      if (!bill.endDate) return 0;
+      var p = Number(bill.payment) || 0;
+      switch (bill.cadence) {
+        case "biweekly": return p * 26 / 12;
+        case "monthly": return p;
+        default: return 0;
+      }
+    }
+    return 0;
+  }
+
+  function computeTotals(bills) {
+    var monthly = 0;
+    for (var i = 0; i < bills.length; i++) {
+      monthly += toMonthly(bills[i]);
+    }
+    return {
+      monthly: monthly,
+      biweekly: monthly * 12 / 26,
+      yearly: monthly * 12
+    };
+  }
+
+  /** Optional helper: payment × remaining (not used for totals). */
+  function remainingOwed(bill) {
+    if (bill.type !== "temporary") return 0;
+    var rem = Number(bill.remaining);
+    if (!rem && rem !== 0) return 0;
+    return (Number(bill.payment) || 0) * rem;
+  }
+
+  function formatDisplayDate(iso) {
+    var d = parseISODate(iso);
+    if (!d) return iso || "";
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  }
+
+  function formatMoney(n) {
+    var v = Math.round((Number(n) || 0) * 100) / 100;
+    return "$" + v.toLocaleString("en-US", {
+      minimumFractionDigits: v % 1 === 0 ? 0 : 2,
+      maximumFractionDigits: 2
+    });
+  }
+
+  function uid() {
+    return "b_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
+  }
+
+  // ─── Persistence ────────────────────────────────────────
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        state.bills = [];
+        state.seeded = false;
+        return;
+      }
+      var data = JSON.parse(raw);
+      state.bills = Array.isArray(data.bills) ? data.bills : [];
+      state.seeded = !!data.seeded;
+    } catch (e) {
+      state.bills = [];
+      state.seeded = false;
+    }
+  }
+
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      version: 1,
+      seeded: state.seeded,
+      bills: state.bills,
+      exportedAt: null
+    }));
+  }
+
+  // ─── Samples ────────────────────────────────────────────
+
+  function sampleBills() {
+    return [
+      {
+        id: uid(),
+        type: "recurring",
+        name: "Car payment",
+        amount: 425,
+        cadence: "monthly",
+        category: "Transport",
+        nextDue: "",
+        active: true,
+        notes: "Sample bill — edit or delete me"
+      },
+      {
+        id: uid(),
+        type: "recurring",
+        name: "Motorcycle",
+        amount: 180,
+        cadence: "biweekly",
+        category: "Transport",
+        nextDue: "",
+        active: true,
+        notes: "Sample bill"
+      },
+      {
+        id: uid(),
+        type: "temporary",
+        name: "Affirm — laptop",
+        payment: 75,
+        cadence: "biweekly",
+        remaining: 8,
+        lender: "Affirm",
+        startDate: "2026-07-15",
+        endDate: "2027-01-06"
+      }
+    ];
+  }
+
+  function ensureSamples() {
+    if (state.bills.length === 0 && !state.seeded) {
+      state.bills = sampleBills();
+      state.seeded = true;
+      save();
+    }
+  }
+
+  // ─── DOM refs ───────────────────────────────────────────
+
+  var el = {
+    totalBiweekly: document.getElementById("totalBiweekly"),
+    totalMonthly: document.getElementById("totalMonthly"),
+    totalYearly: document.getElementById("totalYearly"),
+    billList: document.getElementById("billList"),
+    formModal: document.getElementById("formModal"),
+    confirmModal: document.getElementById("confirmModal"),
+    billForm: document.getElementById("billForm"),
+    formTitle: document.getElementById("formTitle"),
+    typeTabs: document.getElementById("typeTabs"),
+    editId: document.getElementById("editId"),
+    fName: document.getElementById("fName"),
+    fAmount: document.getElementById("fAmount"),
+    fAmountLabel: document.getElementById("fAmountLabel"),
+    fCadence: document.getElementById("fCadence"),
+    fCategory: document.getElementById("fCategory"),
+    fNextDue: document.getElementById("fNextDue"),
+    fActive: document.getElementById("fActive"),
+    fNotes: document.getElementById("fNotes"),
+    fRemaining: document.getElementById("fRemaining"),
+    fLender: document.getElementById("fLender"),
+    fStartDate: document.getElementById("fStartDate"),
+    fEndDate: document.getElementById("fEndDate"),
+    recurringFields: document.getElementById("recurringFields"),
+    temporaryFields: document.getElementById("temporaryFields"),
+    confirmText: document.getElementById("confirmText"),
+    toast: document.getElementById("toast"),
+    importFile: document.getElementById("importFile")
+  };
+
+  // ─── UI helpers ─────────────────────────────────────────
+
+  function toast(msg) {
+    el.toast.textContent = msg;
+    el.toast.classList.add("show");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () {
+      el.toast.classList.remove("show");
+    }, 2200);
+  }
+
+  function setCadenceOptions(type) {
+    var list = type === "temporary" ? TEMP_CADENCES : RECURRING_CADENCES;
+    el.fCadence.innerHTML = list.map(function (c) {
+      return "<option value=\"" + c + "\">" + capitalize(c) + "</option>";
+    }).join("");
+  }
+
+  function capitalize(s) {
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  function setFormType(type) {
+    state.formType = type;
+    var tabs = el.typeTabs.querySelectorAll(".type-tab");
+    for (var i = 0; i < tabs.length; i++) {
+      var t = tabs[i];
+      t.classList.remove("active-recurring", "active-temporary");
+      if (t.getAttribute("data-type") === type) {
+        t.classList.add(type === "recurring" ? "active-recurring" : "active-temporary");
+      }
+    }
+    var isRec = type === "recurring";
+    el.recurringFields.classList.toggle("hidden", !isRec);
+    el.temporaryFields.classList.toggle("hidden", isRec);
+    el.fAmountLabel.textContent = isRec ? "Amount" : "Payment amount";
+    setCadenceOptions(type);
+    if (isRec) {
+      el.fStartDate.removeAttribute("required");
+      el.fEndDate.removeAttribute("required");
+      el.fRemaining.removeAttribute("required");
+    } else {
+      el.fStartDate.setAttribute("required", "required");
+      el.fEndDate.setAttribute("required", "required");
+      el.fRemaining.removeAttribute("required");
+    }
+  }
+
+  function openForm(bill) {
+    state.editingId = bill ? bill.id : null;
+    el.formTitle.textContent = bill ? "Edit bill" : "Add bill";
+    el.editId.value = bill ? bill.id : "";
+
+    // Lock type tabs when editing
+    var tabs = el.typeTabs.querySelectorAll(".type-tab");
+    for (var i = 0; i < tabs.length; i++) {
+      tabs[i].disabled = !!bill;
+    }
+
+    if (bill) {
+      setFormType(bill.type);
+      el.fName.value = bill.name || "";
+      if (bill.type === "recurring") {
+        el.fAmount.value = bill.amount;
+        el.fCadence.value = bill.cadence;
+        el.fCategory.value = bill.category || "Other";
+        el.fNextDue.value = bill.nextDue || "";
+        el.fActive.checked = bill.active !== false;
+        el.fNotes.value = bill.notes || "";
+      } else {
+        el.fAmount.value = bill.payment;
+        el.fCadence.value = bill.cadence;
+        el.fRemaining.value = bill.remaining != null && bill.remaining !== "" ? bill.remaining : "";
+        el.fLender.value = bill.lender || "Other";
+        el.fStartDate.value = bill.startDate || "";
+        el.fEndDate.value = bill.endDate || "";
+      }
+    } else {
+      el.billForm.reset();
+      el.fActive.checked = true;
+      setFormType("recurring");
+    }
+
+    el.formModal.classList.add("open");
+    setTimeout(function () { el.fName.focus(); }, 50);
+  }
+
+  function closeForm() {
+    el.formModal.classList.remove("open");
+    state.editingId = null;
+  }
+
+  function openConfirm(id, name) {
+    state.deleteId = id;
+    el.confirmText.textContent = "Delete \"" + name + "\"? This cannot be undone.";
+    el.confirmModal.classList.add("open");
+  }
+
+  function closeConfirm() {
+    el.confirmModal.classList.remove("open");
+    state.deleteId = null;
+  }
+
+  // ─── Render ─────────────────────────────────────────────
+
+  function filteredBills() {
+    if (state.filter === "all") return state.bills.slice();
+    return state.bills.filter(function (b) { return b.type === state.filter; });
+  }
+
+  function renderTotals() {
+    var t = computeTotals(state.bills);
+    el.totalBiweekly.textContent = formatMoney(t.biweekly);
+    el.totalMonthly.textContent = formatMoney(t.monthly);
+    el.totalYearly.textContent = formatMoney(t.yearly);
+  }
+
+  function renderList() {
+    var bills = filteredBills();
+    var html = "";
+
+    if (state.bills.length === 0) {
+      html =
+        "<div class=\"empty\">" +
+        "<h2>No bills yet</h2>" +
+        "<p>Add a recurring bill or temporary installment, or load sample data to explore.</p>" +
+        "<button type=\"button\" class=\"btn btn-primary\" id=\"btnLoadSamples\">Load 3 sample bills</button>" +
+        "</div>";
+      el.billList.innerHTML = html;
+      var btn = document.getElementById("btnLoadSamples");
+      if (btn) {
+        btn.addEventListener("click", function () {
+          state.bills = sampleBills();
+          state.seeded = true;
+          save();
+          render();
+          toast("Samples loaded");
+        });
+      }
+      return;
+    }
+
+    if (bills.length === 0) {
+      el.billList.innerHTML =
+        "<div class=\"empty\"><p>No " + state.filter + " bills. Try another filter.</p></div>";
+      return;
+    }
+
+    // Sort: active first, then by monthly impact desc
+    bills.sort(function (a, b) {
+      var am = toMonthly(a);
+      var bm = toMonthly(b);
+      var aDead = (a.type === "temporary" && isTempComplete(a)) || (a.type === "recurring" && !a.active);
+      var bDead = (b.type === "temporary" && isTempComplete(b)) || (b.type === "recurring" && !b.active);
+      if (aDead !== bDead) return aDead ? 1 : -1;
+      return bm - am;
+    });
+
+    for (var i = 0; i < bills.length; i++) {
+      html += renderCard(bills[i]);
+    }
+
+    // Clear samples helper if only samples-ish
+    html +=
+      "<div style=\"margin-top:8px;text-align:center;\">" +
+      "<button type=\"button\" class=\"btn btn-ghost\" id=\"btnClearAll\">Clear all bills</button>" +
+      "</div>";
+
+    el.billList.innerHTML = html;
+
+    var clearBtn = document.getElementById("btnClearAll");
+    if (clearBtn) {
+      clearBtn.addEventListener("click", function () {
+        if (!confirm("Clear all bills? You can export a backup first.")) return;
+        state.bills = [];
+        state.seeded = true;
+        save();
+        render();
+        toast("All bills cleared");
+      });
+    }
+  }
+
+  function renderCard(bill) {
+    var isTemp = bill.type === "temporary";
+    var isComplete = isTemp && isTempComplete(bill);
+    var isPaused = !isTemp && !bill.active;
+    var classes = "bill-card";
+    if (isPaused) classes += " paused";
+    if (isComplete) classes += " complete";
+
+    var amountDisplay = isTemp
+      ? formatMoney(bill.payment)
+      : formatMoney(bill.amount);
+
+    var badges =
+      "<span class=\"badge " + (isTemp ? "badge-temporary" : "badge-recurring") + "\">" +
+      (isTemp ? "Temporary" : "Recurring") + "</span>";
+
+    if (isPaused) badges += "<span class=\"badge badge-paused\">Paused</span>";
+    if (isComplete) badges += "<span class=\"badge badge-complete\">Paid off</span>";
+    if (!isTemp && bill.category) {
+      badges += "<span class=\"badge badge-cat\">" + escapeHtml(bill.category) + "</span>";
+    }
+    if (isTemp && bill.lender) {
+      badges += "<span class=\"badge badge-cat\">" + escapeHtml(bill.lender) + "</span>";
+    }
+
+    var detail = capitalize(bill.cadence);
+    if (isTemp) {
+      if (bill.endDate) {
+        detail += " · Ends " + formatDisplayDate(bill.endDate);
+        var days = daysUntilEnd(bill);
+        if (days !== null) {
+          if (days < 0) detail += " · archived";
+          else if (days === 0) detail += " · ends today";
+          else detail += " · " + days + " day" + (days === 1 ? "" : "s") + " left";
+        }
+      }
+      if (bill.startDate) detail += " · started " + formatDisplayDate(bill.startDate);
+      if (bill.remaining != null && bill.remaining !== "" && Number(bill.remaining) >= 0) {
+        detail += " · " + Number(bill.remaining) + " payments left";
+        var owed = remainingOwed(bill);
+        if (owed > 0) detail += " (~" + formatMoney(owed) + ")";
+      }
+    } else {
+      detail += " · ~" + formatMoney(toMonthly(bill)) + "/mo";
+      if (bill.nextDue) detail += " · due " + bill.nextDue;
+      if (bill.notes) detail += " · " + escapeHtml(bill.notes);
+    }
+
+    var actions =
+      "<button type=\"button\" class=\"btn btn-secondary btn-sm\" data-action=\"edit\" data-id=\"" + bill.id + "\">Edit</button>";
+
+    if (isTemp && !isComplete && bill.remaining != null && Number(bill.remaining) > 0) {
+      actions +=
+        "<button type=\"button\" class=\"btn btn-warn btn-sm\" data-action=\"pay\" data-id=\"" + bill.id + "\">Log a payment</button>";
+    }
+
+    if (!isTemp) {
+      actions +=
+        "<button type=\"button\" class=\"btn btn-secondary btn-sm\" data-action=\"toggle\" data-id=\"" + bill.id + "\">" +
+        (bill.active ? "Pause" : "Resume") + "</button>";
+    }
+
+    actions +=
+      "<button type=\"button\" class=\"btn btn-ghost btn-sm\" data-action=\"delete\" data-id=\"" + bill.id + "\" style=\"color:var(--danger);\">Delete</button>";
+
+    return (
+      "<article class=\"" + classes + "\" data-id=\"" + bill.id + "\">" +
+      "<div class=\"bill-top\">" +
+      "<div class=\"bill-name\">" + escapeHtml(bill.name) + "</div>" +
+      "<div class=\"bill-amount\">" + amountDisplay + "</div>" +
+      "</div>" +
+      "<div class=\"bill-meta\">" + badges + "</div>" +
+      "<div class=\"bill-detail\">" + detail + "</div>" +
+      "<div class=\"bill-actions\">" + actions + "</div>" +
+      "</article>"
+    );
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function render() {
+    renderTotals();
+    renderList();
+  }
+
+  // ─── CRUD ───────────────────────────────────────────────
+
+  function findBill(id) {
+    for (var i = 0; i < state.bills.length; i++) {
+      if (state.bills[i].id === id) return state.bills[i];
+    }
+    return null;
+  }
+
+  function upsertFromForm(e) {
+    e.preventDefault();
+    var type = state.formType;
+    var name = el.fName.value.trim();
+    if (!name) return;
+
+    var existing = state.editingId ? findBill(state.editingId) : null;
+    if (state.editingId && !existing) return;
+    if (existing) type = existing.type;
+
+    // Validate temporary dates before mutating state
+    var startDate = "";
+    var endDate = "";
+    var remVal = null;
+    if (type === "temporary") {
+      startDate = el.fStartDate.value || "";
+      endDate = el.fEndDate.value || "";
+      if (!startDate || !endDate) {
+        toast("Start and end dates are required");
+        return;
+      }
+      if (endDate < startDate) {
+        toast("End date must be on or after start");
+        return;
+      }
+      var remRaw = el.fRemaining.value.trim();
+      remVal = remRaw === "" ? null : Math.max(0, parseInt(remRaw, 10) || 0);
+    }
+
+    var bill = existing;
+    if (!bill) {
+      bill = { id: uid(), type: type };
+      state.bills.push(bill);
+    }
+
+    bill.name = name;
+
+    if (type === "recurring") {
+      bill.amount = parseFloat(el.fAmount.value) || 0;
+      bill.cadence = el.fCadence.value;
+      bill.category = el.fCategory.value;
+      bill.nextDue = el.fNextDue.value || "";
+      bill.active = !!el.fActive.checked;
+      bill.notes = el.fNotes.value.trim();
+      delete bill.payment;
+      delete bill.remaining;
+      delete bill.lender;
+      delete bill.startDate;
+      delete bill.endDate;
+    } else {
+      bill.payment = parseFloat(el.fAmount.value) || 0;
+      bill.cadence = el.fCadence.value;
+      bill.lender = el.fLender.value;
+      bill.startDate = startDate;
+      bill.endDate = endDate;
+      bill.remaining = remVal;
+      delete bill.amount;
+      delete bill.category;
+      delete bill.nextDue;
+      delete bill.active;
+      delete bill.notes;
+    }
+
+    var wasEdit = !!state.editingId;
+    save();
+    closeForm();
+    render();
+    toast(wasEdit ? "Bill updated" : "Bill added");
+  }
+
+  function logPayment(id) {
+    var bill = findBill(id);
+    if (!bill || bill.type !== "temporary") return;
+    if (isTempComplete(bill)) {
+      toast("Already paid off (past end date)");
+      return;
+    }
+    var rem = Number(bill.remaining);
+    if (!rem || rem <= 0) {
+      toast("Set remaining payments to log, or edit the end date");
+      return;
+    }
+    bill.remaining = rem - 1;
+    save();
+    render();
+    toast("Payment logged · " + bill.remaining + " left (end date still controls totals)");
+  }
+
+  function toggleActive(id) {
+    var bill = findBill(id);
+    if (!bill || bill.type !== "recurring") return;
+    bill.active = !bill.active;
+    save();
+    render();
+    toast(bill.active ? "Resumed" : "Paused");
+  }
+
+  function deleteBill(id) {
+    state.bills = state.bills.filter(function (b) { return b.id !== id; });
+    save();
+    closeConfirm();
+    render();
+    toast("Deleted");
+  }
+
+  // ─── Export / Import ────────────────────────────────────
+
+  function exportJSON() {
+    var payload = {
+      version: 1,
+      app: "diego-expense-tracker",
+      exportedAt: new Date().toISOString(),
+      bills: state.bills
+    };
+    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "expense-tracker-backup.json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast("Exported");
+  }
+
+  function importJSON(file) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var data = JSON.parse(reader.result);
+        var bills = Array.isArray(data) ? data : data.bills;
+        if (!Array.isArray(bills)) throw new Error("No bills array");
+        // Basic sanitize
+        var cleaned = [];
+        for (var i = 0; i < bills.length; i++) {
+          var b = bills[i];
+          if (!b || !b.type || !b.name) continue;
+          if (!b.id) b.id = uid();
+          cleaned.push(b);
+        }
+        if (!confirm("Replace current " + state.bills.length + " bill(s) with " + cleaned.length + " from file?")) {
+          return;
+        }
+        state.bills = cleaned;
+        state.seeded = true;
+        save();
+        render();
+        toast("Imported " + cleaned.length + " bills");
+      } catch (err) {
+        toast("Import failed — invalid JSON");
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  // ─── Events ─────────────────────────────────────────────
+
+  document.getElementById("btnAdd").addEventListener("click", function () {
+    openForm(null);
+  });
+
+  document.getElementById("btnCancelForm").addEventListener("click", closeForm);
+  el.billForm.addEventListener("submit", upsertFromForm);
+
+  el.typeTabs.addEventListener("click", function (e) {
+    var btn = e.target.closest(".type-tab");
+    if (!btn || btn.disabled) return;
+    setFormType(btn.getAttribute("data-type"));
+  });
+
+  document.querySelector(".filters").addEventListener("click", function (e) {
+    var chip = e.target.closest(".chip");
+    if (!chip) return;
+    state.filter = chip.getAttribute("data-filter");
+    var chips = document.querySelectorAll(".chip");
+    for (var i = 0; i < chips.length; i++) {
+      chips[i].classList.toggle("active", chips[i] === chip);
+    }
+    renderList();
+  });
+
+  el.billList.addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-action]");
+    if (!btn) return;
+    var id = btn.getAttribute("data-id");
+    var action = btn.getAttribute("data-action");
+    if (action === "edit") {
+      openForm(findBill(id));
+    } else if (action === "delete") {
+      var b = findBill(id);
+      openConfirm(id, b ? b.name : "bill");
+    } else if (action === "pay") {
+      logPayment(id);
+    } else if (action === "toggle") {
+      toggleActive(id);
+    }
+  });
+
+  document.getElementById("btnCancelDelete").addEventListener("click", closeConfirm);
+  document.getElementById("btnConfirmDelete").addEventListener("click", function () {
+    if (state.deleteId) deleteBill(state.deleteId);
+  });
+
+  document.getElementById("btnExport").addEventListener("click", exportJSON);
+  document.getElementById("btnImport").addEventListener("click", function () {
+    el.importFile.click();
+  });
+  el.importFile.addEventListener("change", function () {
+    if (el.importFile.files && el.importFile.files[0]) {
+      importJSON(el.importFile.files[0]);
+      el.importFile.value = "";
+    }
+  });
+
+  // Close modals on overlay tap
+  el.formModal.addEventListener("click", function (e) {
+    if (e.target === el.formModal) closeForm();
+  });
+  el.confirmModal.addEventListener("click", function (e) {
+    if (e.target === el.confirmModal) closeConfirm();
+  });
+
+  // ─── Init ───────────────────────────────────────────────
+
+  load();
+  ensureSamples();
+  setFormType("recurring");
+  render();
+
+  // Expose for smoke tests / debugging
+  window.__expenseTracker = {
+    toMonthly: toMonthly,
+    computeTotals: computeTotals,
+    remainingOwed: remainingOwed,
+    isTempComplete: isTempComplete,
+    daysUntilEnd: daysUntilEnd,
+    todayISO: todayISO,
+    formatMoney: formatMoney,
+    STORAGE_KEY: STORAGE_KEY
+  };
+})();
+  </script>
+</body>
+</html>
