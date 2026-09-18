@@ -60,7 +60,6 @@
       margin-bottom: 14px;
     }
 
-    /* Sticky dashboard */
     .dashboard {
       position: sticky;
       top: 0;
@@ -147,7 +146,121 @@
       line-height: 1.4;
     }
 
-    /* Toolbar */
+    .coming-up {
+      margin-top: 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+    }
+
+    .coming-up h2 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--warn);
+      margin-bottom: 8px;
+    }
+
+    .coming-up-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .coming-up-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+      font-size: 0.88rem;
+      line-height: 1.3;
+    }
+
+    .coming-up-item .cu-name {
+      font-weight: 600;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .coming-up-item .cu-date {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .coming-up-item.due-soon .cu-date { color: var(--warn); }
+    .coming-up-item.due-today .cu-date { color: var(--danger); font-weight: 700; }
+
+    .coming-up-empty {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .reminders {
+      margin-top: 10px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .reminders h2 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .remind-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .remind-row label {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .remind-chips {
+      display: flex;
+      gap: 6px;
+    }
+
+    .remind-chip {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--bg-input);
+      color: var(--text-muted);
+      border-radius: 999px;
+      padding: 6px 12px;
+      min-height: 36px;
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .remind-chip.active {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .remind-note {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+      margin-top: 8px;
+    }
+
     .toolbar {
       display: flex;
       flex-wrap: wrap;
@@ -209,7 +322,6 @@
     .btn-block { width: 100%; }
     .btn-sm { min-height: 40px; padding: 8px 12px; font-size: 0.82rem; }
 
-    /* Filters */
     .filters {
       display: flex;
       gap: 8px;
@@ -240,7 +352,6 @@
       color: #fff;
     }
 
-    /* Bill list */
     .bill-list {
       display: flex;
       flex-direction: column;
@@ -254,10 +365,7 @@
       padding: 14px;
     }
 
-    .bill-card.paused {
-      opacity: 0.55;
-    }
-
+    .bill-card.paused { opacity: 0.55; }
     .bill-card.complete {
       opacity: 0.5;
       border-style: dashed;
@@ -308,6 +416,7 @@
     .badge-paused { background: rgba(139, 154, 171, 0.2); color: var(--text-muted); }
     .badge-complete { background: rgba(212, 160, 23, 0.2); color: var(--warn); }
     .badge-cat { background: rgba(255,255,255,0.06); color: var(--text-muted); }
+    .badge-next { background: rgba(212, 160, 23, 0.15); color: var(--warn); }
 
     .bill-detail {
       font-size: 0.8rem;
@@ -322,7 +431,6 @@
       gap: 6px;
     }
 
-    /* Empty state */
     .empty {
       text-align: center;
       padding: 28px 16px;
@@ -343,7 +451,6 @@
       line-height: 1.4;
     }
 
-    /* Modal */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -536,7 +643,6 @@
     }
 
     .hidden { display: none !important; }
-
     #importFile { display: none; }
   </style>
 </head>
@@ -567,9 +673,36 @@
         <strong>end date</strong> (final payment). After the end date they are
         paid off and drop out of totals. Remaining-payments is an optional helper only.
         <br /><br />
-        Biweekly total = monthly × 12 ÷ 26 &nbsp;·&nbsp; Yearly = monthly × 12.
+        Next due dates roll forward by cadence when a date passes (or when you
+        mark paid). Biweekly total = monthly × 12 ÷ 26 · Yearly = monthly × 12.
       </div>
     </details>
+
+    <div class="coming-up" id="comingUp">
+      <h2>Coming up</h2>
+      <div class="coming-up-list" id="comingUpList">
+        <p class="coming-up-empty">No bills due in the next 14 days.</p>
+      </div>
+    </div>
+
+    <div class="reminders">
+      <h2>Reminders</h2>
+      <div class="remind-row">
+        <label>Remind when due within</label>
+        <div class="remind-chips" id="remindChips">
+          <button type="button" class="remind-chip" data-days="1">1 day</button>
+          <button type="button" class="remind-chip active" data-days="3">3 days</button>
+          <button type="button" class="remind-chip" data-days="7">7 days</button>
+        </div>
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" id="btnEnableReminders">Enable reminders</button>
+      <p class="remind-note" id="remindStatus"></p>
+      <p class="remind-note">
+        Note: iPhone home-screen web apps may only notify when the app is opened
+        (and only if the browser supports it). This is not a full native push service.
+      </p>
+    </div>
+
     <p class="home-tip">On iPhone: open in Safari → Share → Add to Home Screen. On Android: Chrome menu → Install app / Add to Home screen.</p>
   </div>
 
@@ -591,7 +724,6 @@
     <input type="file" id="importFile" accept="application/json,.json" />
   </div>
 
-  <!-- Add / Edit modal -->
   <div class="modal-overlay" id="formModal" role="dialog" aria-modal="true">
     <div class="modal">
       <h2 id="formTitle">Add bill</h2>
@@ -619,7 +751,6 @@
           </div>
         </div>
 
-        <!-- Recurring fields -->
         <div id="recurringFields">
           <div class="form-row">
             <div class="form-group">
@@ -634,8 +765,8 @@
               </select>
             </div>
             <div class="form-group">
-              <label for="fNextDue">Next due (optional)</label>
-              <input type="date" id="fNextDue" />
+              <label for="fNextDue">Next due date</label>
+              <input type="date" id="fNextDue" required />
             </div>
           </div>
           <div class="form-group">
@@ -653,7 +784,6 @@
           </div>
         </div>
 
-        <!-- Temporary fields -->
         <div id="temporaryFields" class="hidden">
           <div class="form-row">
             <div class="form-group">
@@ -667,21 +797,26 @@
           </div>
           <div class="form-row">
             <div class="form-group">
+              <label for="fTempNextDue">Next due date</label>
+              <input type="date" id="fTempNextDue" />
+            </div>
+            <div class="form-group">
               <label for="fRemaining">Remaining payments (optional)</label>
               <input type="number" id="fRemaining" min="0" step="1" placeholder="Helper only" inputmode="numeric" />
             </div>
-            <div class="form-group">
-              <label for="fLender">Lender</label>
-              <select id="fLender">
-                <option>Affirm</option>
-                <option>Zip</option>
-                <option>Klarna</option>
-                <option>Other</option>
-              </select>
-            </div>
+          </div>
+          <div class="form-group">
+            <label for="fLender">Lender</label>
+            <select id="fLender">
+              <option>Affirm</option>
+              <option>Zip</option>
+              <option>Klarna</option>
+              <option>Other</option>
+            </select>
           </div>
           <p style="font-size:0.75rem;color:var(--text-muted);margin:-6px 0 12px;line-height:1.35;">
             End date is the source of truth — once today is past it, the bill is paid off and stops counting.
+            Next due rolls forward while the bill is still active.
           </p>
         </div>
 
@@ -693,7 +828,6 @@
     </div>
   </div>
 
-  <!-- Confirm delete modal -->
   <div class="modal-overlay" id="confirmModal" role="dialog" aria-modal="true">
     <div class="modal">
       <h2>Delete bill?</h2>
@@ -712,10 +846,12 @@
   "use strict";
 
   var STORAGE_KEY = "diego-expense-tracker-v1";
+  var LAST_NOTIFY_KEY = "diego-expense-tracker-lastNotifyDate";
   var CATEGORIES = ["Transport", "Housing", "Utilities", "Debt", "Subscriptions", "Other"];
   var LENDERS = ["Affirm", "Zip", "Klarna", "Other"];
   var RECURRING_CADENCES = ["weekly", "biweekly", "monthly", "yearly"];
   var TEMP_CADENCES = ["biweekly", "monthly"];
+  var COMING_UP_DAYS = 14;
 
   var state = {
     bills: [],
@@ -723,20 +859,25 @@
     formType: "recurring",
     editingId: null,
     deleteId: null,
-    seeded: false
+    seeded: false,
+    settings: {
+      remindWithinDays: 3
+    }
   };
 
-  // ─── Math ───────────────────────────────────────────────
+  // ─── Dates ───────────────────────────────────────────────
 
-  /** Today's date as YYYY-MM-DD in local time. */
   function todayISO() {
     var d = new Date();
+    return toISODate(d);
+  }
+
+  function toISODate(d) {
     var m = String(d.getMonth() + 1).padStart(2, "0");
     var day = String(d.getDate()).padStart(2, "0");
     return d.getFullYear() + "-" + m + "-" + day;
   }
 
-  /** Parse YYYY-MM-DD to local midnight Date (or null). */
   function parseISODate(s) {
     if (!s || typeof s !== "string") return null;
     var p = s.split("-");
@@ -745,14 +886,111 @@
     return isNaN(dt.getTime()) ? null : dt;
   }
 
-  /** Temporary bill is complete when today is after endDate. End date is source of truth. */
+  function addDays(iso, n) {
+    var d = parseISODate(iso);
+    if (!d) return iso;
+    d.setDate(d.getDate() + n);
+    return toISODate(d);
+  }
+
+  /** Add months keeping day-of-month; clamp to last day of target month. */
+  function addMonthsClamped(iso, months) {
+    var d = parseISODate(iso);
+    if (!d) return iso;
+    var day = d.getDate();
+    var y = d.getFullYear();
+    var m = d.getMonth() + months;
+    y += Math.floor(m / 12);
+    m = ((m % 12) + 12) % 12;
+    var lastDay = new Date(y, m + 1, 0).getDate();
+    return toISODate(new Date(y, m, Math.min(day, lastDay)));
+  }
+
+  /**
+   * Advance a due date by one cadence period.
+   * cadence: weekly | biweekly | monthly | yearly | every_N / every N
+   * intervalDays: optional numeric override for custom N-day cadence
+   */
+  function advanceByCadence(iso, cadence, intervalDays) {
+    if (!iso) return iso;
+    var n = Number(intervalDays);
+    if (n > 0) return addDays(iso, n);
+
+    var c = String(cadence || "").toLowerCase().trim();
+    if (c === "weekly") return addDays(iso, 7);
+    if (c === "biweekly") return addDays(iso, 14);
+    if (c === "monthly") return addMonthsClamped(iso, 1);
+    if (c === "yearly") return addMonthsClamped(iso, 12);
+
+    var m = /^every[_\s-]?(\d+)$/i.exec(c);
+    if (m) return addDays(iso, Number(m[1]));
+
+    return addDays(iso, 30);
+  }
+
+  /** While nextDueDate is before today, advance by cadence until today or future. */
+  function rollForwardNextDue(bill, today) {
+    today = today || todayISO();
+    if (!bill || !bill.nextDueDate) return false;
+    if (!shouldTrackNextDue(bill)) return false;
+
+    var changed = false;
+    var guard = 0;
+    while (bill.nextDueDate < today && guard < 600) {
+      var next = advanceByCadence(bill.nextDueDate, bill.cadence, bill.intervalDays);
+      if (!next || next === bill.nextDueDate) break;
+      // Temporary: stop if we'd go past end date (end date is source of truth)
+      if (bill.type === "temporary" && bill.endDate && next > bill.endDate) {
+        if (bill.nextDueDate < bill.endDate && bill.endDate >= today) {
+          bill.nextDueDate = bill.endDate;
+          changed = true;
+        }
+        break;
+      }
+      bill.nextDueDate = next;
+      changed = true;
+      guard++;
+    }
+    return changed;
+  }
+
+  function shouldTrackNextDue(bill) {
+    if (!bill) return false;
+    if (bill.type === "recurring") return bill.active !== false;
+    if (bill.type === "temporary") return !isTempComplete(bill);
+    return false;
+  }
+
+  function migrateBill(bill) {
+    if (!bill || typeof bill !== "object") return bill;
+    // Migrate nextDue → nextDueDate
+    if (!bill.nextDueDate) {
+      if (bill.nextDue) {
+        bill.nextDueDate = bill.nextDue;
+      } else {
+        bill.nextDueDate = todayISO();
+      }
+    }
+    if (bill.nextDue != null) delete bill.nextDue;
+    return bill;
+  }
+
+  function rollAllForward() {
+    var today = todayISO();
+    var changed = false;
+    for (var i = 0; i < state.bills.length; i++) {
+      migrateBill(state.bills[i]);
+      if (rollForwardNextDue(state.bills[i], today)) changed = true;
+    }
+    return changed;
+  }
+
   function isTempComplete(bill) {
     if (!bill || bill.type !== "temporary") return false;
     if (!bill.endDate) return false;
     return todayISO() > bill.endDate;
   }
 
-  /** Days remaining until end date (0 if today is end day, negative if past). */
   function daysUntilEnd(bill) {
     var end = parseISODate(bill.endDate);
     if (!end) return null;
@@ -761,7 +999,13 @@
     return Math.round(ms / 86400000);
   }
 
-  /** Normalize a bill's payment to a monthly amount. Returns 0 if inactive/complete. */
+  function daysUntil(iso) {
+    var d = parseISODate(iso);
+    if (!d) return null;
+    var now = parseISODate(todayISO());
+    return Math.round((d.getTime() - now.getTime()) / 86400000);
+  }
+
   function toMonthly(bill) {
     if (bill.type === "recurring") {
       if (!bill.active) return 0;
@@ -771,11 +1015,14 @@
         case "biweekly": return a * 26 / 12;
         case "monthly": return a;
         case "yearly": return a / 12;
-        default: return 0;
+        default:
+          if (bill.intervalDays && Number(bill.intervalDays) > 0) {
+            return a * (30.4375 / Number(bill.intervalDays));
+          }
+          return 0;
       }
     }
     if (bill.type === "temporary") {
-      // End date is source of truth — count while today <= endDate
       if (isTempComplete(bill)) return 0;
       if (!bill.endDate) return 0;
       var p = Number(bill.payment) || 0;
@@ -800,7 +1047,6 @@
     };
   }
 
-  /** Optional helper: payment × remaining (not used for totals). */
   function remainingOwed(bill) {
     if (bill.type !== "temporary") return 0;
     var rem = Number(bill.remaining);
@@ -826,6 +1072,82 @@
     return "b_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
   }
 
+  // ─── Upcoming / notifications ────────────────────────────
+
+  function getUpcomingBills(withinDays) {
+    var today = todayISO();
+    var limit = addDays(today, withinDays == null ? COMING_UP_DAYS : withinDays);
+    var list = [];
+    for (var i = 0; i < state.bills.length; i++) {
+      var b = state.bills[i];
+      if (!shouldTrackNextDue(b) || !b.nextDueDate) continue;
+      if (b.nextDueDate >= today && b.nextDueDate <= limit) {
+        list.push(b);
+      }
+    }
+    list.sort(function (a, b) {
+      if (a.nextDueDate < b.nextDueDate) return -1;
+      if (a.nextDueDate > b.nextDueDate) return 1;
+      return (a.name || "").localeCompare(b.name || "");
+    });
+    return list;
+  }
+
+  function updateRemindStatus() {
+    var elStatus = document.getElementById("remindStatus");
+    if (!elStatus) return;
+    if (!("Notification" in window)) {
+      elStatus.textContent = "Notifications are not supported in this browser.";
+      return;
+    }
+    var p = Notification.permission;
+    if (p === "granted") {
+      elStatus.textContent = "Reminders enabled · checks when you open the app (once per day).";
+    } else if (p === "denied") {
+      elStatus.textContent = "Permission denied — enable notifications in browser/site settings.";
+    } else {
+      elStatus.textContent = "Tap Enable reminders to allow notifications when bills are due soon.";
+    }
+  }
+
+  function syncRemindChips() {
+    var days = state.settings.remindWithinDays || 3;
+    var chips = document.querySelectorAll("#remindChips .remind-chip");
+    for (var i = 0; i < chips.length; i++) {
+      chips[i].classList.toggle("active", Number(chips[i].getAttribute("data-days")) === days);
+    }
+  }
+
+  function maybeNotifyDueSoon() {
+    if (!("Notification" in window)) return;
+    if (Notification.permission !== "granted") return;
+
+    var today = todayISO();
+    try {
+      if (localStorage.getItem(LAST_NOTIFY_KEY) === today) return;
+    } catch (e) { /* ignore */ }
+
+    var within = state.settings.remindWithinDays || 3;
+    var due = getUpcomingBills(within);
+    if (due.length === 0) return;
+
+    var names = due.slice(0, 5).map(function (b) {
+      return b.name + " (" + formatDisplayDate(b.nextDueDate) + ")";
+    });
+    var title = due.length === 1
+      ? "1 bill due soon"
+      : due.length + " bills due soon";
+    var body = names.join(", ");
+    if (due.length > 5) body += "…";
+
+    try {
+      new Notification(title, { body: body, tag: "expense-due-" + today });
+      localStorage.setItem(LAST_NOTIFY_KEY, today);
+    } catch (err) {
+      // Some environments block Notification constructor
+    }
+  }
+
   // ─── Persistence ────────────────────────────────────────
 
   function load() {
@@ -839,6 +1161,15 @@
       var data = JSON.parse(raw);
       state.bills = Array.isArray(data.bills) ? data.bills : [];
       state.seeded = !!data.seeded;
+      if (data.settings && typeof data.settings === "object") {
+        var rd = Number(data.settings.remindWithinDays);
+        if (rd === 1 || rd === 3 || rd === 7) {
+          state.settings.remindWithinDays = rd;
+        }
+      }
+      for (var i = 0; i < state.bills.length; i++) {
+        migrateBill(state.bills[i]);
+      }
     } catch (e) {
       state.bills = [];
       state.seeded = false;
@@ -846,10 +1177,12 @@
   }
 
   function save() {
+    rollAllForward();
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      version: 1,
+      version: 2,
       seeded: state.seeded,
       bills: state.bills,
+      settings: state.settings,
       exportedAt: null
     }));
   }
@@ -857,6 +1190,7 @@
   // ─── Samples ────────────────────────────────────────────
 
   function sampleBills() {
+    var t = todayISO();
     return [
       {
         id: uid(),
@@ -865,7 +1199,7 @@
         amount: 425,
         cadence: "monthly",
         category: "Transport",
-        nextDue: "",
+        nextDueDate: t,
         active: true,
         notes: "Sample bill — edit or delete me"
       },
@@ -876,7 +1210,7 @@
         amount: 180,
         cadence: "biweekly",
         category: "Transport",
-        nextDue: "",
+        nextDueDate: addDays(t, 5),
         active: true,
         notes: "Sample bill"
       },
@@ -889,7 +1223,8 @@
         remaining: 8,
         lender: "Affirm",
         startDate: "2026-07-15",
-        endDate: "2027-01-06"
+        endDate: "2027-01-06",
+        nextDueDate: addDays(t, 3)
       }
     ];
   }
@@ -909,6 +1244,7 @@
     totalMonthly: document.getElementById("totalMonthly"),
     totalYearly: document.getElementById("totalYearly"),
     billList: document.getElementById("billList"),
+    comingUpList: document.getElementById("comingUpList"),
     formModal: document.getElementById("formModal"),
     confirmModal: document.getElementById("confirmModal"),
     billForm: document.getElementById("billForm"),
@@ -921,6 +1257,7 @@
     fCadence: document.getElementById("fCadence"),
     fCategory: document.getElementById("fCategory"),
     fNextDue: document.getElementById("fNextDue"),
+    fTempNextDue: document.getElementById("fTempNextDue"),
     fActive: document.getElementById("fActive"),
     fNotes: document.getElementById("fNotes"),
     fRemaining: document.getElementById("fRemaining"),
@@ -975,10 +1312,14 @@
       el.fStartDate.removeAttribute("required");
       el.fEndDate.removeAttribute("required");
       el.fRemaining.removeAttribute("required");
+      el.fNextDue.setAttribute("required", "required");
+      el.fTempNextDue.removeAttribute("required");
     } else {
       el.fStartDate.setAttribute("required", "required");
       el.fEndDate.setAttribute("required", "required");
       el.fRemaining.removeAttribute("required");
+      el.fNextDue.removeAttribute("required");
+      el.fTempNextDue.removeAttribute("required");
     }
   }
 
@@ -987,7 +1328,6 @@
     el.formTitle.textContent = bill ? "Edit bill" : "Add bill";
     el.editId.value = bill ? bill.id : "";
 
-    // Lock type tabs when editing
     var tabs = el.typeTabs.querySelectorAll(".type-tab");
     for (var i = 0; i < tabs.length; i++) {
       tabs[i].disabled = !!bill;
@@ -1000,7 +1340,7 @@
         el.fAmount.value = bill.amount;
         el.fCadence.value = bill.cadence;
         el.fCategory.value = bill.category || "Other";
-        el.fNextDue.value = bill.nextDue || "";
+        el.fNextDue.value = bill.nextDueDate || todayISO();
         el.fActive.checked = bill.active !== false;
         el.fNotes.value = bill.notes || "";
       } else {
@@ -1010,10 +1350,12 @@
         el.fLender.value = bill.lender || "Other";
         el.fStartDate.value = bill.startDate || "";
         el.fEndDate.value = bill.endDate || "";
+        el.fTempNextDue.value = bill.nextDueDate || "";
       }
     } else {
       el.billForm.reset();
       el.fActive.checked = true;
+      el.fNextDue.value = todayISO();
       setFormType("recurring");
     }
 
@@ -1051,6 +1393,38 @@
     el.totalYearly.textContent = formatMoney(t.yearly);
   }
 
+  function renderComingUp() {
+    var upcoming = getUpcomingBills(COMING_UP_DAYS);
+    if (!el.comingUpList) return;
+    if (upcoming.length === 0) {
+      el.comingUpList.innerHTML = "<p class=\"coming-up-empty\">No bills due in the next 14 days.</p>";
+      return;
+    }
+    var html = "";
+    for (var i = 0; i < upcoming.length; i++) {
+      var b = upcoming[i];
+      var days = daysUntil(b.nextDueDate);
+      var cls = "coming-up-item";
+      var dateLabel = formatDisplayDate(b.nextDueDate);
+      if (days === 0) {
+        cls += " due-today";
+        dateLabel = "Today";
+      } else if (days === 1) {
+        cls += " due-soon";
+        dateLabel = "Tomorrow";
+      } else if (days != null && days <= (state.settings.remindWithinDays || 3)) {
+        cls += " due-soon";
+        dateLabel += " · " + days + "d";
+      }
+      html +=
+        "<div class=\"" + cls + "\">" +
+        "<span class=\"cu-name\">" + escapeHtml(b.name) + "</span>" +
+        "<span class=\"cu-date\">" + dateLabel + "</span>" +
+        "</div>";
+    }
+    el.comingUpList.innerHTML = html;
+  }
+
   function renderList() {
     var bills = filteredBills();
     var html = "";
@@ -1082,7 +1456,6 @@
       return;
     }
 
-    // Sort: active first, then by monthly impact desc
     bills.sort(function (a, b) {
       var am = toMonthly(a);
       var bm = toMonthly(b);
@@ -1096,7 +1469,6 @@
       html += renderCard(bills[i]);
     }
 
-    // Clear samples helper if only samples-ish
     html +=
       "<div style=\"margin-top:8px;text-align:center;\">" +
       "<button type=\"button\" class=\"btn btn-ghost\" id=\"btnClearAll\">Clear all bills</button>" +
@@ -1141,6 +1513,9 @@
     if (isTemp && bill.lender) {
       badges += "<span class=\"badge badge-cat\">" + escapeHtml(bill.lender) + "</span>";
     }
+    if (shouldTrackNextDue(bill) && bill.nextDueDate) {
+      badges += "<span class=\"badge badge-next\">Next: " + formatDisplayDate(bill.nextDueDate) + "</span>";
+    }
 
     var detail = capitalize(bill.cadence);
     if (isTemp) {
@@ -1161,16 +1536,20 @@
       }
     } else {
       detail += " · ~" + formatMoney(toMonthly(bill)) + "/mo";
-      if (bill.nextDue) detail += " · due " + bill.nextDue;
       if (bill.notes) detail += " · " + escapeHtml(bill.notes);
     }
 
     var actions =
       "<button type=\"button\" class=\"btn btn-secondary btn-sm\" data-action=\"edit\" data-id=\"" + bill.id + "\">Edit</button>";
 
+    if (shouldTrackNextDue(bill) && bill.nextDueDate) {
+      actions +=
+        "<button type=\"button\" class=\"btn btn-warn btn-sm\" data-action=\"markpaid\" data-id=\"" + bill.id + "\">Mark paid</button>";
+    }
+
     if (isTemp && !isComplete && bill.remaining != null && Number(bill.remaining) > 0) {
       actions +=
-        "<button type=\"button\" class=\"btn btn-warn btn-sm\" data-action=\"pay\" data-id=\"" + bill.id + "\">Log a payment</button>";
+        "<button type=\"button\" class=\"btn btn-secondary btn-sm\" data-action=\"pay\" data-id=\"" + bill.id + "\">Log payment (−1)</button>";
     }
 
     if (!isTemp) {
@@ -1205,7 +1584,10 @@
 
   function render() {
     renderTotals();
+    renderComingUp();
     renderList();
+    syncRemindChips();
+    updateRemindStatus();
   }
 
   // ─── CRUD ───────────────────────────────────────────────
@@ -1227,10 +1609,11 @@
     if (state.editingId && !existing) return;
     if (existing) type = existing.type;
 
-    // Validate temporary dates before mutating state
     var startDate = "";
     var endDate = "";
     var remVal = null;
+    var nextDueDate = "";
+
     if (type === "temporary") {
       startDate = el.fStartDate.value || "";
       endDate = el.fEndDate.value || "";
@@ -1244,6 +1627,11 @@
       }
       var remRaw = el.fRemaining.value.trim();
       remVal = remRaw === "" ? null : Math.max(0, parseInt(remRaw, 10) || 0);
+      nextDueDate = el.fTempNextDue.value || startDate || todayISO();
+      if (nextDueDate < startDate) nextDueDate = startDate;
+      if (endDate && nextDueDate > endDate) nextDueDate = endDate;
+    } else {
+      nextDueDate = el.fNextDue.value || todayISO();
     }
 
     var bill = existing;
@@ -1258,7 +1646,7 @@
       bill.amount = parseFloat(el.fAmount.value) || 0;
       bill.cadence = el.fCadence.value;
       bill.category = el.fCategory.value;
-      bill.nextDue = el.fNextDue.value || "";
+      bill.nextDueDate = nextDueDate;
       bill.active = !!el.fActive.checked;
       bill.notes = el.fNotes.value.trim();
       delete bill.payment;
@@ -1266,6 +1654,7 @@
       delete bill.lender;
       delete bill.startDate;
       delete bill.endDate;
+      delete bill.nextDue;
     } else {
       bill.payment = parseFloat(el.fAmount.value) || 0;
       bill.cadence = el.fCadence.value;
@@ -1273,18 +1662,45 @@
       bill.startDate = startDate;
       bill.endDate = endDate;
       bill.remaining = remVal;
+      bill.nextDueDate = nextDueDate;
       delete bill.amount;
       delete bill.category;
-      delete bill.nextDue;
       delete bill.active;
       delete bill.notes;
+      delete bill.nextDue;
     }
+
+    rollForwardNextDue(bill);
 
     var wasEdit = !!state.editingId;
     save();
     closeForm();
     render();
     toast(wasEdit ? "Bill updated" : "Bill added");
+  }
+
+  /** Advance nextDueDate by one cadence (Mark paid / Log payment). */
+  function markPaid(id) {
+    var bill = findBill(id);
+    if (!bill || !shouldTrackNextDue(bill)) return;
+    if (!bill.nextDueDate) bill.nextDueDate = todayISO();
+
+    var next = advanceByCadence(bill.nextDueDate, bill.cadence, bill.intervalDays);
+    if (bill.type === "temporary" && bill.endDate && next > bill.endDate) {
+      bill.nextDueDate = bill.endDate;
+      toast("Next due set to final payment date");
+    } else {
+      bill.nextDueDate = next;
+      toast("Marked paid · next " + formatDisplayDate(bill.nextDueDate));
+    }
+
+    // Optional: also decrement remaining for temporary if set
+    if (bill.type === "temporary" && bill.remaining != null && Number(bill.remaining) > 0) {
+      bill.remaining = Number(bill.remaining) - 1;
+    }
+
+    save();
+    render();
   }
 
   function logPayment(id) {
@@ -1296,19 +1712,28 @@
     }
     var rem = Number(bill.remaining);
     if (!rem || rem <= 0) {
-      toast("Set remaining payments to log, or edit the end date");
+      toast("Set remaining payments to log, or use Mark paid");
       return;
     }
     bill.remaining = rem - 1;
+    if (bill.nextDueDate) {
+      var next = advanceByCadence(bill.nextDueDate, bill.cadence, bill.intervalDays);
+      if (bill.endDate && next > bill.endDate) {
+        bill.nextDueDate = bill.endDate;
+      } else {
+        bill.nextDueDate = next;
+      }
+    }
     save();
     render();
-    toast("Payment logged · " + bill.remaining + " left (end date still controls totals)");
+    toast("Payment logged · " + bill.remaining + " left");
   }
 
   function toggleActive(id) {
     var bill = findBill(id);
     if (!bill || bill.type !== "recurring") return;
     bill.active = !bill.active;
+    if (bill.active) rollForwardNextDue(bill);
     save();
     render();
     toast(bill.active ? "Resumed" : "Paused");
@@ -1326,10 +1751,11 @@
 
   function exportJSON() {
     var payload = {
-      version: 1,
+      version: 2,
       app: "diego-expense-tracker",
       exportedAt: new Date().toISOString(),
-      bills: state.bills
+      bills: state.bills,
+      settings: state.settings
     };
     var blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     var url = URL.createObjectURL(blob);
@@ -1350,12 +1776,12 @@
         var data = JSON.parse(reader.result);
         var bills = Array.isArray(data) ? data : data.bills;
         if (!Array.isArray(bills)) throw new Error("No bills array");
-        // Basic sanitize
         var cleaned = [];
         for (var i = 0; i < bills.length; i++) {
           var b = bills[i];
           if (!b || !b.type || !b.name) continue;
           if (!b.id) b.id = uid();
+          migrateBill(b);
           cleaned.push(b);
         }
         if (!confirm("Replace current " + state.bills.length + " bill(s) with " + cleaned.length + " from file?")) {
@@ -1363,6 +1789,10 @@
         }
         state.bills = cleaned;
         state.seeded = true;
+        if (data.settings && typeof data.settings === "object") {
+          var rd = Number(data.settings.remindWithinDays);
+          if (rd === 1 || rd === 3 || rd === 7) state.settings.remindWithinDays = rd;
+        }
         save();
         render();
         toast("Imported " + cleaned.length + " bills");
@@ -1399,6 +1829,38 @@
     renderList();
   });
 
+  document.getElementById("remindChips").addEventListener("click", function (e) {
+    var chip = e.target.closest(".remind-chip");
+    if (!chip) return;
+    var d = Number(chip.getAttribute("data-days"));
+    if (d !== 1 && d !== 3 && d !== 7) return;
+    state.settings.remindWithinDays = d;
+    save();
+    syncRemindChips();
+    toast("Remind within " + d + " day" + (d === 1 ? "" : "s"));
+  });
+
+  document.getElementById("btnEnableReminders").addEventListener("click", function () {
+    if (!("Notification" in window)) {
+      toast("Notifications not supported here");
+      updateRemindStatus();
+      return;
+    }
+    Notification.requestPermission().then(function (perm) {
+      updateRemindStatus();
+      if (perm === "granted") {
+        toast("Reminders enabled");
+        maybeNotifyDueSoon();
+      } else if (perm === "denied") {
+        toast("Permission denied");
+      } else {
+        toast("Permission not granted");
+      }
+    }).catch(function () {
+      toast("Could not request permission");
+    });
+  });
+
   el.billList.addEventListener("click", function (e) {
     var btn = e.target.closest("[data-action]");
     if (!btn) return;
@@ -1411,6 +1873,8 @@
       openConfirm(id, b ? b.name : "bill");
     } else if (action === "pay") {
       logPayment(id);
+    } else if (action === "markpaid") {
+      markPaid(id);
     } else if (action === "toggle") {
       toggleActive(id);
     }
@@ -1432,7 +1896,6 @@
     }
   });
 
-  // Close modals on overlay tap
   el.formModal.addEventListener("click", function (e) {
     if (e.target === el.formModal) closeForm();
   });
@@ -1440,14 +1903,24 @@
     if (e.target === el.confirmModal) closeConfirm();
   });
 
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible") {
+      if (rollAllForward()) save();
+      render();
+      maybeNotifyDueSoon();
+    }
+  });
+
   // ─── Init ───────────────────────────────────────────────
 
   load();
   ensureSamples();
+  if (rollAllForward()) save();
+  else save(); // persist migrations
   setFormType("recurring");
   render();
+  maybeNotifyDueSoon();
 
-  // Expose for smoke tests / debugging
   window.__expenseTracker = {
     toMonthly: toMonthly,
     computeTotals: computeTotals,
@@ -1456,6 +1929,11 @@
     daysUntilEnd: daysUntilEnd,
     todayISO: todayISO,
     formatMoney: formatMoney,
+    advanceByCadence: advanceByCadence,
+    addMonthsClamped: addMonthsClamped,
+    addDays: addDays,
+    rollForwardNextDue: rollForwardNextDue,
+    getUpcomingBills: getUpcomingBills,
     STORAGE_KEY: STORAGE_KEY
   };
 })();
