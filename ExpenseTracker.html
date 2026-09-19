@@ -57,18 +57,12 @@
     .subtitle {
       color: var(--text-muted);
       font-size: 0.85rem;
-      margin-bottom: 14px;
+      margin-bottom: 10px;
     }
 
     .dashboard {
-      position: sticky;
-      top: 0;
-      z-index: 20;
-      background: linear-gradient(180deg, var(--bg) 70%, transparent);
-      padding-bottom: 12px;
-      margin: 0 -14px;
-      padding-left: 14px;
-      padding-right: 14px;
+      /* scrolls with the document — no sticky/fixed chrome */
+      padding-bottom: 4px;
     }
 
     .totals {
@@ -81,7 +75,7 @@
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 12px 8px;
+      padding: 10px 6px;
       text-align: center;
     }
 
@@ -102,8 +96,8 @@
       word-break: break-all;
     }
 
-    details.how-calc {
-      margin-top: 10px;
+    details.chrome-fold {
+      margin-top: 8px;
       background: var(--bg-elevated);
       border-radius: 10px;
       border: 1px solid var(--border);
@@ -111,34 +105,50 @@
       color: var(--text-muted);
     }
 
-    details.how-calc summary {
-      padding: 10px 12px;
+    details.chrome-fold summary {
+      padding: 8px 12px;
       cursor: pointer;
       list-style: none;
       display: flex;
       align-items: center;
       gap: 6px;
-      min-height: 44px;
+      min-height: 40px;
       user-select: none;
+      font-weight: 600;
+      color: var(--text);
     }
 
-    details.how-calc summary::-webkit-details-marker { display: none; }
-    details.how-calc summary::before {
+    details.chrome-fold summary::-webkit-details-marker { display: none; }
+    details.chrome-fold summary::before {
       content: "▸";
       font-size: 0.7rem;
       transition: transform 0.15s;
+      color: var(--text-muted);
     }
-    details.how-calc[open] summary::before { transform: rotate(90deg); }
+    details.chrome-fold[open] summary::before { transform: rotate(90deg); }
 
-    details.how-calc .how-body {
+    details.chrome-fold .fold-body {
       padding: 0 12px 12px;
       line-height: 1.45;
+    }
+
+    details.chrome-fold .fold-body > :first-child { margin-top: 0; }
+
+    details.chrome-fold .coming-up,
+    details.chrome-fold .reminders,
+    details.chrome-fold .home-tip {
+      margin-top: 10px;
+    }
+
+    details.chrome-fold .coming-up:first-child,
+    details.chrome-fold .reminders:first-child {
+      margin-top: 0;
     }
 
     .home-tip {
       margin-top: 10px;
       padding: 10px 12px;
-      background: var(--bg-elevated);
+      background: var(--bg-input);
       border: 1px dashed var(--border);
       border-radius: 10px;
       font-size: 0.78rem;
@@ -146,8 +156,10 @@
       line-height: 1.4;
     }
 
+    .home-tip strong { color: var(--warn); font-weight: 700; }
+
     .coming-up {
-      margin-top: 12px;
+      margin-top: 0;
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: var(--radius);
@@ -265,7 +277,7 @@
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
-      margin: 16px 0 12px;
+      margin: 12px 0 8px;
     }
 
     .btn {
@@ -664,9 +676,10 @@
         <div class="amount" id="totalYearly">$0</div>
       </div>
     </div>
-    <details class="how-calc">
+
+    <details class="chrome-fold">
       <summary>How calculated</summary>
-      <div class="how-body">
+      <div class="fold-body">
         Each active bill is normalized to a monthly amount
         (weekly × 52/12, biweekly × 26/12, monthly × 1, yearly ÷ 12).
         Temporary / installment bills count while today is on or before their
@@ -678,32 +691,38 @@
       </div>
     </details>
 
-    <div class="coming-up" id="comingUp">
-      <h2>Coming up</h2>
-      <div class="coming-up-list" id="comingUpList">
-        <p class="coming-up-empty">No bills due in the next 14 days.</p>
-      </div>
-    </div>
-
-    <div class="reminders">
-      <h2>Reminders</h2>
-      <div class="remind-row">
-        <label>Remind when due within</label>
-        <div class="remind-chips" id="remindChips">
-          <button type="button" class="remind-chip" data-days="1">1 day</button>
-          <button type="button" class="remind-chip active" data-days="3">3 days</button>
-          <button type="button" class="remind-chip" data-days="7">7 days</button>
+    <details class="chrome-fold" id="remindersTips">
+      <summary>Reminders &amp; tips</summary>
+      <div class="fold-body">
+        <div class="coming-up" id="comingUp">
+          <h2>Coming up</h2>
+          <div class="coming-up-list" id="comingUpList">
+            <p class="coming-up-empty">No bills due in the next 14 days.</p>
+          </div>
         </div>
-      </div>
-      <button type="button" class="btn btn-secondary btn-sm" id="btnEnableReminders">Enable reminders</button>
-      <p class="remind-note" id="remindStatus"></p>
-      <p class="remind-note">
-        Note: iPhone home-screen web apps may only notify when the app is opened
-        (and only if the browser supports it). This is not a full native push service.
-      </p>
-    </div>
 
-    <p class="home-tip">On iPhone: open in Safari → Share → Add to Home Screen. On Android: Chrome menu → Install app / Add to Home screen.</p>
+        <div class="reminders">
+          <h2>Reminders</h2>
+          <div class="remind-row">
+            <label>Remind when due within</label>
+            <div class="remind-chips" id="remindChips">
+              <button type="button" class="remind-chip" data-days="1">1 day</button>
+              <button type="button" class="remind-chip active" data-days="3">3 days</button>
+              <button type="button" class="remind-chip" data-days="7">7 days</button>
+            </div>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" id="btnEnableReminders">Enable reminders</button>
+          <p class="remind-note" id="remindStatus"></p>
+          <p class="remind-note">
+            Note: iPhone home-screen web apps may only notify when the app is opened
+            (and only if the browser supports it). This is not a full native push service.
+          </p>
+        </div>
+
+        <p class="home-tip">On iPhone: open in Safari → Share → Add to Home Screen. On Android: Chrome menu → Install app / Add to Home screen.</p>
+        <p class="home-tip"><strong>Export backup before asking for app updates.</strong> Use Export JSON below so your bills are never lost when the HTML file is replaced.</p>
+      </div>
+    </details>
   </div>
 
   <div class="toolbar">
@@ -846,6 +865,7 @@
   "use strict";
 
   var STORAGE_KEY = "diego-expense-tracker-v1";
+  var INIT_FLAG_KEY = "diego-expense-tracker-initialized";
   var LAST_NOTIFY_KEY = "diego-expense-tracker-lastNotifyDate";
   var CATEGORIES = ["Transport", "Housing", "Utilities", "Debt", "Subscriptions", "Other"];
   var LENDERS = ["Affirm", "Zip", "Klarna", "Other"];
@@ -1150,29 +1170,79 @@
 
   // ─── Persistence ────────────────────────────────────────
 
+  function markInitialized() {
+    try {
+      localStorage.setItem(INIT_FLAG_KEY, "1");
+    } catch (e) { /* ignore quota / private mode */ }
+  }
+
+  function isInitialized() {
+    try {
+      return localStorage.getItem(INIT_FLAG_KEY) === "1";
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /**
+   * Load bills from localStorage.
+   * - Key missing + never initialized → first visit: seed samples once.
+   * - Key present with a bills array (even []) → use it; never re-seed.
+   * - Key missing but initialized flag set → empty list; never re-seed.
+   * Migrations only touch bill fields; never replace storage with samples.
+   */
   function load() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) {
+      if (raw == null) {
         state.bills = [];
-        state.seeded = false;
+        if (!isInitialized()) {
+          // First visit ever — seed demo bills once.
+          state.bills = sampleBills();
+          state.seeded = true;
+          markInitialized();
+          return;
+        }
+        // Already used this app before; do not inject samples again.
+        state.seeded = true;
+        markInitialized();
         return;
       }
+
       var data = JSON.parse(raw);
-      state.bills = Array.isArray(data.bills) ? data.bills : [];
-      state.seeded = !!data.seeded;
-      if (data.settings && typeof data.settings === "object") {
-        var rd = Number(data.settings.remindWithinDays);
-        if (rd === 1 || rd === 3 || rd === 7) {
-          state.settings.remindWithinDays = rd;
+      // Preserve existing data shapes: { bills: [...] } or a bare array.
+      if (Array.isArray(data)) {
+        state.bills = data;
+        state.seeded = true;
+      } else if (data && typeof data === "object") {
+        if (Array.isArray(data.bills)) {
+          state.bills = data.bills;
+        } else {
+          // Key existed but no bills array — treat as empty, do NOT seed.
+          state.bills = [];
         }
+        // If the key exists, user already has (or had) data — never re-seed.
+        state.seeded = true;
+        if (data.settings && typeof data.settings === "object") {
+          var rd = Number(data.settings.remindWithinDays);
+          if (rd === 1 || rd === 3 || rd === 7) {
+            state.settings.remindWithinDays = rd;
+          }
+        }
+      } else {
+        state.bills = [];
+        state.seeded = true;
       }
+
       for (var i = 0; i < state.bills.length; i++) {
         migrateBill(state.bills[i]);
       }
+      markInitialized();
     } catch (e) {
+      // Parse failed but key was present — preserve empty, never re-seed samples.
       state.bills = [];
-      state.seeded = false;
+      state.seeded = true;
+      markInitialized();
     }
   }
 
@@ -1229,12 +1299,9 @@
     ];
   }
 
+  /** @deprecated Seed only happens in load() on first visit; kept as no-op guard. */
   function ensureSamples() {
-    if (state.bills.length === 0 && !state.seeded) {
-      state.bills = sampleBills();
-      state.seeded = true;
-      save();
-    }
+    // Intentionally empty: never re-seed when bills are empty after user data exists.
   }
 
   // ─── DOM refs ───────────────────────────────────────────
@@ -1914,9 +1981,10 @@
   // ─── Init ───────────────────────────────────────────────
 
   load();
-  ensureSamples();
+  ensureSamples(); // no-op; first-visit seed already handled in load()
+  markInitialized();
   if (rollAllForward()) save();
-  else save(); // persist migrations
+  else save(); // persist migrations / first-visit seed; never clears bills
   setFormType("recurring");
   render();
   maybeNotifyDueSoon();
